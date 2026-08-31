@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>CHaT ON</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{--bg:#f6f7fb;--panel:#fff;--text:#20212a;--muted:#777985;--line:#ececf2;--brand:#6d4aff}
+html,body{margin:0;min-height:100%;background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;color:var(--text)}
+button,input,textarea,select{font:inherit}button{cursor:pointer}
+.app{max-width:780px;margin:auto;min-height:100vh;background:#fff}
+.topbar{height:64px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;border-bottom:1px solid var(--line);position:sticky;top:0;background:#fff;z-index:5}
+.logo{font-weight:900;font-size:22px}.logo span{font-weight:400}
+.primary,.ghost{border:0;border-radius:12px;padding:10px 13px;font-weight:800}.primary{background:var(--brand);color:#fff}.ghost{background:#f2f2f6}
+main{padding:18px 15px 90px}
+.hero{background:linear-gradient(135deg,#eeeaff,#f7f4ff,#edf6ff);padding:30px 22px;border-radius:24px;margin-bottom:24px}
+.hero small{color:var(--brand);font-weight:900;font-size:11px}.hero h1{font-size:34px;line-height:1.12;margin:9px 0}.hero p{margin:0;color:#666;font-size:14px}
+.tabs{display:flex;gap:7px;overflow-x:auto;margin-bottom:12px}.tab{border:1px solid #e5e5eb;background:#fff;border-radius:999px;padding:8px 13px;white-space:nowrap}.tab.active{background:#20212a;color:#fff}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.card{border:1px solid var(--line);border-radius:19px;background:#fff;padding:10px;text-align:left}.avatar{height:145px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:54px;background:#efedfc}.card h3{margin:10px 3px 4px}.card p{font-size:12px;color:var(--muted);line-height:1.45;margin:0 3px;min-height:35px}
+.full{position:fixed;inset:0;background:#fff;z-index:20;display:none;flex-direction:column}.full.show{display:flex}
+.page-head{height:64px;display:flex;align-items:center;gap:10px;padding:0 14px;border-bottom:1px solid var(--line);padding-top:env(safe-area-inset-top)}.page-head strong{flex:1}.close{width:38px;height:38px;border:0;border-radius:11px;background:#f2f2f5;font-size:21px}
+.messages{flex:1;overflow:auto;background:#fafafd;padding:16px;display:flex;flex-direction:column;gap:10px}.msg{max-width:82%;padding:10px 13px;border-radius:16px;font-size:14px;line-height:1.5;white-space:pre-wrap}.msg.ai{align-self:flex-start;background:#fff;border:1px solid var(--line);border-top-left-radius:5px}.msg.me{align-self:flex-end;background:var(--brand);color:#fff;border-top-right-radius:5px}
+.composer{display:flex;gap:7px;padding:9px 10px calc(9px + env(safe-area-inset-bottom));border-top:1px solid var(--line)}.composer input{flex:1;min-width:0;border:1px solid #dedee5;border-radius:13px;padding:11px 12px}.send{border:0;background:var(--brand);color:#fff;border-radius:13px;padding:0 15px;font-weight:800}
+.form-wrap{padding:18px;overflow:auto}.field{margin-bottom:16px}.field label{display:block;font-size:13px;font-weight:800;margin-bottom:7px}.field input,.field textarea,.field select{width:100%;border:1px solid #dedee5;border-radius:13px;padding:12px}.field textarea{min-height:92px}.save{width:100%;border:0;background:var(--brand);color:#fff;border-radius:14px;padding:14px;font-weight:900}
+@media(min-width:620px){.grid{grid-template-columns:repeat(3,1fr)}}
+</style>
+</head>
+<body>
+<div class="app">
+<header class="topbar">
+  <div class="logo">CHaT <span>ON</span></div>
+  <div><button class="ghost" id="historyBtn">대화</button> <button class="primary" id="makeBtn">+ 만들기</button></div>
+</header>
+<main>
+  <section class="hero">
+    <small>AI CHARACTER CHAT</small>
+    <h1>원하는 캐릭터와<br>대화를 시작하세요.</h1>
+    <p>이제 실제 AI가 캐릭터 성격에 맞춰 답해요.</p>
+  </section>
+  <div class="tabs">
+    <button class="tab active" data-filter="all">전체</button>
+    <button class="tab" data-filter="romance">로맨스</button>
+    <button class="tab" data-filter="daily">일상</button>
+    <button class="tab" data-filter="fantasy">판타지</button>
+    <button class="tab" data-filter="custom">내 캐릭터</button>
+  </div>
+  <div class="grid" id="grid"></div>
+</main>
+</div>
+
+<div class="full" id="chatPage">
+  <div class="page-head">
+    <div id="chatEmoji" style="font-size:24px">🌙</div>
+    <strong id="chatName">서연</strong>
+    <button class="close" id="closeChat">×</button>
+  </div>
+  <div class="messages" id="messages"></div>
+  <form class="composer" id="composer">
+    <input id="msgInput" autocomplete="off" placeholder="메시지를 입력하세요">
+    <button class="send">전송</button>
+  </form>
+</div>
+
+<div class="full" id="makePage">
+  <div class="page-head"><strong>캐릭터 만들기</strong><button class="close" id="closeMake">×</button></div>
+  <div class="form-wrap">
+    <div class="field"><label>이름</label><input id="cName"></div>
+    <div class="field"><label>이모지</label><input id="cEmoji" maxlength="4" placeholder="🙂"></div>
+    <div class="field"><label>장르</label><select id="cType"><option value="romance">로맨스</option><option value="daily">일상</option><option value="fantasy">판타지</option></select></div>
+    <div class="field"><label>한 줄 소개</label><input id="cDesc"></div>
+    <div class="field"><label>성격 / 말투</label><textarea id="cPersona" placeholder="예: 츤데레, 현실적인 반말, 질투가 조금 많음"></textarea></div>
+    <div class="field"><label>첫 대사</label><textarea id="cFirst"></textarea></div>
+    <button class="save" id="saveCharacter">저장</button>
+  </div>
+</div>
+
+<script>
+const WORKER_URL="https://chat-on-ai.whdbqls2002.workers.dev";
+const base=[
+{id:"seoyeon",name:"서연",emoji:"🌙",type:"romance",desc:"무심한 척하지만 은근히 당신을 신경 쓰는 같은 과 동기.",persona:"츤데레 대학생. 반말. 짧고 현실적으로 대답하고 은근히 질투한다.",first:"왔네. 무슨 일인데 갑자기 나한테 말 걸었어?"},
+{id:"harin",name:"하린",emoji:"🌸",type:"daily",desc:"밝고 장난기 많은 오래된 친구.",persona:"밝고 장난기 많다. ㅋㅋ를 자연스럽게 쓰고 친한 친구처럼 말한다.",first:"오 ㅋㅋ 드디어 왔네. 오늘 뭐했어?"},
+{id:"luna",name:"루나",emoji:"✨",type:"fantasy",desc:"마법 세계에서 만난 신비로운 마법사.",persona:"차분하고 신비로운 판타지 말투. 사용자를 여행자라고 부른다.",first:"어서 와, 여행자여. 널 기다리고 있었어."}
+];
+let current=null;
+const $=id=>document.getElementById(id);
+const getCustom=()=>JSON.parse(localStorage.getItem("chaton_custom")||"[]");
+const getChats=()=>JSON.parse(localStorage.getItem("chaton_chats")||"{}");
+const saveChats=v=>localStorage.setItem("chaton_chats",JSON.stringify(v));
+const all=()=>[...base,...getCustom()];
+
+function render(filter="all"){
+ const g=$("grid"); g.innerHTML="";
+ all().filter(c=>filter==="all"||(filter==="custom"?c.custom:c.type===filter)).forEach(c=>{
+   const b=document.createElement("button"); b.className="card";
+   b.innerHTML=`<div class="avatar">${c.emoji||"🙂"}</div><h3>${c.name}</h3><p>${c.desc||""}</p>`;
+   b.onclick=()=>openChat(c); g.appendChild(b);
+ });
+}
+document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));t.classList.add("active");render(t.dataset.filter)});
+
+function add(text,who,save=true){
+ const d=document.createElement("div"); d.className="msg "+who; d.textContent=text; $("messages").appendChild(d); $("messages").scrollTop=$("messages").scrollHeight;
+ if(save&&current){const chats=getChats(); chats[current.id]=chats[current.id]||[]; chats[current.id].push({who,text,time:Date.now()}); saveChats(chats);}
+}
+function openChat(c){
+ current=c; $("chatName").textContent=c.name; $("chatEmoji").textContent=c.emoji||"🙂"; $("messages").innerHTML="";
+ const saved=getChats()[c.id]||[]; if(saved.length) saved.forEach(m=>add(m.text,m.who,false)); else add(c.first||"안녕!","ai",false);
+ $("chatPage").classList.add("show"); document.body.style.overflow="hidden";
+}
+$("closeChat").onclick=()=>{$("chatPage").classList.remove("show");document.body.style.overflow=""};
+
+$("composer").onsubmit=async e=>{
+ e.preventDefault();
+ const text=$("msgInput").value.trim(); if(!text||!current)return;
+ add(text,"me"); $("msgInput").value=""; $("msgInput").disabled=true;
+
+ const wait=document.createElement("div"); wait.className="msg ai"; wait.id="wait"; wait.textContent="..."; $("messages").appendChild(wait);
+ try{
+   const chats=getChats();
+   const history=(chats[current.id]||[]).slice(-20).map(m=>({role:m.who==="me"?"user":"assistant",content:m.text}));
+   const r=await fetch(WORKER_URL,{
+     method:"POST",
+     headers:{"Content-Type":"application/json"},
+     body:JSON.stringify({character:{name:current.name,desc:current.desc,persona:current.persona},messages:history})
+   });
+   const data=await r.json(); $("wait")?.remove();
+   if(!r.ok) throw new Error(data.error||"AI 요청 실패");
+   add(data.reply||"잠깐, 다시 말해줄래?","ai");
+ }catch(err){
+   $("wait")?.remove();
+   const d=document.createElement("div"); d.className="msg ai"; d.textContent="AI 연결 오류: "+err.message; $("messages").appendChild(d);
+ }finally{$("msgInput").disabled=false;$("msgInput").focus();}
+};
+
+$("makeBtn").onclick=()=>{$("makePage").classList.add("show");document.body.style.overflow="hidden"};
+$("closeMake").onclick=()=>{$("makePage").classList.remove("show");document.body.style.overflow=""};
+$("saveCharacter").onclick=()=>{
+ const name=$("cName").value.trim(); if(!name)return alert("이름을 입력해줘.");
+ const c={id:"custom_"+Date.now(),custom:true,name,emoji:$("cEmoji").value.trim()||"🙂",type:$("cType").value,desc:$("cDesc").value.trim()||"내가 만든 캐릭터",persona:$("cPersona").value.trim()||"자연스럽고 친근하게 대화함",first:$("cFirst").value.trim()||`안녕, 나는 ${name}이야.`};
+ const arr=getCustom(); arr.push(c); localStorage.setItem("chaton_custom",JSON.stringify(arr)); render(); $("makePage").classList.remove("show"); document.body.style.overflow=""; alert("캐릭터 저장 완료!");
+};
+
+$("historyBtn").onclick=()=>{
+ const chats=getChats(); const chars=all(); const ids=Object.keys(chats).filter(id=>chats[id]?.length);
+ if(!ids.length)return alert("아직 대화 기록이 없어.");
+ const c=chars.find(x=>x.id===ids[ids.length-1]); if(c)openChat(c);
+};
+
+render();
+</script>
+</body>
+</html>

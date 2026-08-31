@@ -85,8 +85,8 @@ const base=[
 let current=null;
 const $=id=>document.getElementById(id);
 const getCustom=()=>JSON.parse(localStorage.getItem("chaton_custom")||"[]");
-const getChats=()=>JSON.parse(localStorage.getItem("chaton_chats")||"{}");
-const saveChats=v=>localStorage.setItem("chaton_chats",JSON.stringify(v));
+const getChats=()=>JSON.parse(localStorage.getItem("chaton_chats_v2")||"{}");
+const saveChats=v=>localStorage.setItem("chaton_chats_v2",JSON.stringify(v));
 const all=()=>[...base,...getCustom()];
 
 function render(filter="all"){
